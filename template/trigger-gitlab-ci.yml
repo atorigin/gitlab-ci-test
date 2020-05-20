@@ -30,7 +30,7 @@ trigger:
     - stg
   script:
     - echo "trigger pipeline"
-    - curl -X POST -F "token=${DEVOPS_PROJECT_TOKEN}" -F "ref=master" -F "variables[RELEASE]=${CI_COMMIT_REF_NAME}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/trigger/pipeline/"
+    - curl -X POST -F "token=${DEVOPS_PROJECT_TOKEN}" -F "ref=master" -F "variables[RELEASE]=${CI_COMMIT_REF_NAME}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/trigger/pipeline/" # You can pass any parameter using -F variables options
     - 'PipelineID=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines" | docker run -i --rm mbentley/jq .[0].id`'
     - 'echo "PipelineID: ${PipelineID}"'
     - 'PipelineStatus=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines/${PipelineID}" | docker run -i --rm mbentley/jq .status`'

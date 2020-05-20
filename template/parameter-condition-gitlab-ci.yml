@@ -1,0 +1,20 @@
+variables:
+  RELEASE: ""
+  AWS_REGISTRY: ""
+  PROJECT_NAME: ""
+  REPO: ""
+
+stages:
+  - job1
+
+first_job:
+  stage: job1 
+  tags:
+    - devops # About registered runner
+  only:
+    refs:
+      - triggers
+    variables: # Setting condition for the job , when RELEASE match rules this job will be executed.
+      - $RELEASE == "one" || $RELEASE == "two" 
+  script:
+    - echo "Execute any you want to do scripts"
