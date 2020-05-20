@@ -1,0 +1,67 @@
+variables:
+  DEVOPS_PROJECT_TOKEN: ""
+  DEVOPS_PROJECT_ID: ""
+  RunnerToken: ""
+
+stages:
+  - env
+  - trigger
+  - check
+
+env:
+  stage: env
+  tags:
+    - backend
+  only:
+    - stg
+  script:
+    - echo $CI_BUILDS_DIR
+    - echo $CI_COMMIT_SHA
+    - echo $CI_PROJECT_PATH
+    - echo $CI_PROJECT_NAME
+    - echo $CI_COMMIT_REF_NAME
+    - echo $GITLAB_USER_NAME
+
+trigger:
+  stage: trigger
+  tags:
+    - backend
+  only:
+    - stg
+  script:
+    - echo "trigger pipeline"
+    - curl -X POST -F "token=${DEVOPS_PROJECT_TOKEN}" -F "ref=master" -F "variables[RELEASE]=${CI_COMMIT_REF_NAME}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/trigger/pipeline/"
+    - 'PipelineID=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines" | docker run -i --rm mbentley/jq .[0].id`'
+    - 'echo "PipelineID: ${PipelineID}"'
+    - 'PipelineStatus=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines/${PipelineID}" | docker run -i --rm mbentley/jq .status`'
+    - 'echo "PipelineStatus: ${PipelineStatus}"'
+
+check:
+  stage: check
+  tags:
+    - backend
+  only:
+    - stg
+  script:
+    - 'PipelineID=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines" | docker run -i --rm mbentley/jq .[0].id`'
+    - 'echo "PipelineID: ${PipelineID}"'
+    - 'PipelineStatus=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines/${PipelineID}" | docker run -i --rm mbentley/jq .status`'
+    - 'echo "PipelineStatus: ${PipelineStatus}"'
+    - 'RetryTime=0'
+    - |
+      until [ "${PipelineStatus}" == '"success"' ]
+      do
+        PipelineStatus=`curl -H "${RunnerToken}" "https://GITLAB_URL/api/v4/projects/${DEVOPS_PROJECT_ID}/pipelines/${PipelineID}" | docker run -i --rm mbentley/jq .status`
+        echo "Remote pipeline status:${PipelineStatus}"
+        if [ "${PipelineStatus}" == '"failed"' ];then
+          echo "Pipeline: ${PipelineStatus}"
+          exit 1
+        elif [ "${RetryTime}" -ge 150 ];then
+          echo "Expired ${RereyTime}"
+          exit 1
+        else
+          sleep 3
+          RetryTime=$((RetryTime+3))
+        fi
+      done
+    - 'echo "Remote Pipeline Success"'
