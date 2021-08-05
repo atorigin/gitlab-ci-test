@@ -1,0 +1,48 @@
+variables:
+    REGISTRY: "10.1.1.44:5000/mes/backend"
+
+stages:
+  - build
+  - image
+
+build:
+  stage: build
+  image: maven:3.6.1-jdk-8-alpine
+  timeout: 90m
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2"
+  dependencies: []
+  tags:
+    - docker-executor
+  interruptible: true
+  # 搭配設定 docker executor，透過 cache 機制減少 maven compile 的時間(外部 dependencies 只要下載過就會被 cache)
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - /root/.m2
+  only:
+    refs:
+      - develop
+  script:
+    - echo "run build artifacts"
+    - mvn clean compile package install 
+  artifacts:
+    paths:
+      - ${CI_PROJECT_NAME}/target/*.jar
+    expire_in: 30 mins
+
+image:
+  # 搭配設定 docker executor，讓 docker 裡面可以呼叫 docker 進行 docker build 的 image 構建 (dind 的方式)
+  image: docker:20.10
+  stage: image
+  cache: {}
+  tags:
+    - docker-executor
+  only:
+    refs:
+      - develop
+  before_script:
+    - echo "Prepare"
+  script:
+    - echo "Can run docker build in docker"
+    - docker build -t demo . --no-cache
