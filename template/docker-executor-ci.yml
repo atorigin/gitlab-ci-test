@@ -1,6 +1,3 @@
-variables:
-    REGISTRY: "10.1.1.44:5000/mes/backend"
-
 stages:
   - build
   - image
