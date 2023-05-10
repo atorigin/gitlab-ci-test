@@ -1,0 +1,12 @@
+stages:
+  - test
+
+test-downstream-pipeline:
+  stage: test
+  tags:
+    - shell
+  rules:
+    - if: >-  # merged into protected-branches
+        $CI_PIPELINE_SOURCE =~ "pipeline"
+  script:
+    -  ./test.sh $PIPELINE_PASSED

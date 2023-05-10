@@ -1,0 +1,12 @@
+stages:
+  - test
+
+test-downstream-pipeline:
+  stage: test
+  only:
+    - owen
+  variables:
+    PIPELINE_PASSED: "trigger pipeline source is pipeline LOL O_O"
+  trigger:
+    project: devops/game-provider-service-pipeline
+    branch: master
